@@ -34,7 +34,7 @@ class DBUtilities(object):
             print("Error {}" .format(error))
 
 
-    def close_connection(self):
+    def release_db_resources(self):
         if(self.conn.is_connected()):
             self.cursor.close()
             self.conn.close()

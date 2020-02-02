@@ -41,6 +41,7 @@ class StagingLoader:
                             exit()
                         else:
                             self.logger.warning("Row Missing Some Columns")
+        self.db_utils.release_db_resources()
 
 
 
