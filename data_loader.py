@@ -1,9 +1,9 @@
 from utilities import utilities
-from StagingLoader import StagingLoader
+from staging_loader import StagingLoader
 
 
 utils = utilities()
-logger = utils.formatLogger("STAGING_ETL")
+logger = utils.formatLogger("BEGIN ETL PROCESS")
 
 logger.info("BEGINNING ETL PROCESS")
 
