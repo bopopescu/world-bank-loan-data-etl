@@ -1,4 +1,5 @@
 import logging
+from dateutil import parser
 
 class utilities:
 
@@ -33,3 +34,7 @@ class utilities:
                 i += 1
         t += ')'
         return t
+
+    def generateTimeDimensionKey(self,dateValue):
+        df = parser.parse(dateValue)
+        return str(df)[:10].replace("-","")

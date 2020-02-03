@@ -8,4 +8,6 @@ logger = utils.formatLogger("BEGIN ETL PROCESS")
 logger.info("BEGINNING ETL PROCESS")
 
 stg_loader = StagingLoader()
-stg_loader.read_and_load_files()
+#stg_loader.read_and_load_files()
+
+stg_loader.process_staging_data()
