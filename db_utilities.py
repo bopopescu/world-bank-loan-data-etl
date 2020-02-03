@@ -52,7 +52,6 @@ class DBUtilities(object):
         self.cursor.execute(sql, (etl,end_of_period,))
         return self.cursor.fetchall()
         
-
     def _checkupdateLoanStatusDimension(self,status_value):
         sql = """ SELECT * FROM dim_loan_status WHERE lower(loan_status) = %s """
         self.cursor.execute(sql, (status_value.lower(),))
@@ -66,8 +65,6 @@ class DBUtilities(object):
             #print(sql_check)
             self.cursor.execute(sql_check, (region_name.lower(),))
             record = self.cursor.fetchone()
-            #print(record)
-            region_key = record[0]
             # Insert New Record and Return the RecordKey
             if(record == None):
                 sql_insert_query = """ INSERT INTO dim_region ( region_key, region_name ) VALUES ( %s, %s )"""
@@ -78,8 +75,10 @@ class DBUtilities(object):
                 self.cursor.execute(sql_check, (region_name.lower(),))
                 record = self.cursor.fetchone()
                 region_key = record[0]
+            else:
+                region_key = record[0]
         except mysql.connector.Error as error:
-            self.logger.error("Error Occured during Region Check and Update {} " .format(error))
+            self.logger.error("Region Check and Update {} " .format(error))
         return region_key
 
     def _checkupdateLoanStatusDimension(self,loan_status_name):
@@ -100,9 +99,8 @@ class DBUtilities(object):
                 loan_status_key = record[0]
             else:
                 loan_status_key = record[0]
-
         except mysql.connector.Error as error:
-            self.logger.error("Error Occured during LOAN STATUS Check and Update {} " .format(error))
+            self.logger.error("LOAN STATUS Check and Update {} " .format(error))
         return loan_status_key
 
     def _checkupdateLoanTypeDimension(self,loan_type_name):
@@ -123,8 +121,132 @@ class DBUtilities(object):
                 loan_type_key = record[0]
             else:
                 loan_type_key = record[0]
-
         except mysql.connector.Error as error:
-            self.logger.error("Error Occured during LOAN TYPE Check and Update {} " .format(error))
+            self.logger.error("LOAN TYPE Check and Update {} " .format(error))
         return loan_type_key
+
+    def _checkupdateCountryDimension(self, country_code , country_name , region_key):
+        country_key = None
+        try:
+            sql_check = """ SELECT * FROM dim_country WHERE lower(country_code) = %s """
+            self.cursor.execute(sql_check, (country_code.lower(),))
+            record = self.cursor.fetchone()
+            # Insert New Record and Return the RecordKey
+            if(record == None):
+                sql_insert_query = """ INSERT INTO dim_country ( country_key, country_code , country_name , region_key ) VALUES ( %s, %s , %s , %s )"""
+                insert_tuple = ( "",country_code.upper(), country_name.upper(), region_key)
+                self.cursor.execute(sql_insert_query,insert_tuple)
+                self.conn.commit()
+                self.logger.info("DIM UPDATED WITH NEW COUNTRY : -> " + str(country_code).upper()  + " - " + str(country_name).upper() + " - " + str(region_key))
+                self.cursor.execute(sql_check, (country_code.lower(),))
+                record = self.cursor.fetchone()
+                country_key = record[0]
+            else:
+                country_key = record[0]
+        except mysql.connector.Error as error:
+            self.logger.error("COUNTRY Check and Update {} " .format(error))
+        return country_key
+
+    def _checkupdateProjectDimension(self, project_id , project_name):
+        project_key = None
+        try:
+            sql_check = """ SELECT * FROM dim_project WHERE lower(project_id) = %s """
+            self.cursor.execute(sql_check, (project_id.lower(),))
+            record = self.cursor.fetchone()
+            # Insert New Record and Return the RecordKey
+            if(record == None):
+                sql_insert_query = """ INSERT INTO dim_project ( project_key, project_id , project_name ) VALUES ( %s, %s , %s )"""
+                insert_tuple = ( "",project_id.upper(), project_name.upper() )
+                self.cursor.execute(sql_insert_query,insert_tuple)
+                self.conn.commit()
+                self.logger.info("DIM UPDATED WITH NEW PROJECT : -> " + str(project_id).upper()  + "-" + str(project_name).upper())
+                self.cursor.execute(sql_check, (project_id.lower(),))
+                record = self.cursor.fetchone()
+                project_key = record[0]
+            else:
+                project_key = record[0]
+        except mysql.connector.Error as error:
+            self.logger.error("PROJECT Check and Update {} " .format(error))
+        return project_key
+
+    def _checkupdateBorrowerDimension(self, borrower_name):
+        borrower_key = None
+        try:
+            sql_check = """ SELECT * FROM dim_borrower WHERE lower(borrower_name) = %s """
+            self.cursor.execute(sql_check, (borrower_name.lower(),))
+            record = self.cursor.fetchone()
+            # Insert New Record and Return the RecordKey
+            if(record == None):
+                sql_insert_query = """ INSERT INTO dim_borrower ( borrower_key, borrower_name ) VALUES ( %s, %s )"""
+                insert_tuple = ( "",borrower_name.upper() )
+                self.cursor.execute(sql_insert_query,insert_tuple)
+                self.conn.commit()
+                self.logger.info("DIM UPDATED WITH NEW BORROWER : -> " + str(borrower_name).upper() )
+                self.cursor.execute(sql_check, (borrower_name.lower(),))
+                record = self.cursor.fetchone()
+                borrower_key = record[0]
+            else:
+                borrower_key = record[0]
+        except mysql.connector.Error as error:
+            self.logger.error("BORROWER Check and Update {} " .format(error))
+        return borrower_key
+
+    def _checkupdateCurrencyDimension(self, currency_name):
+        currency_key = None
+        try:
+            sql_check = """ SELECT * FROM dim_currency WHERE lower(currency_name) = %s """
+            self.cursor.execute(sql_check, (currency_name.lower(),))
+            record = self.cursor.fetchone()
+            # Insert New Record and Return the RecordKey
+            if(record == None):
+                sql_insert_query = """ INSERT INTO dim_currency ( currency_key, currency_name ) VALUES ( %s, %s )"""
+                insert_tuple = ( "",currency_name.upper() )
+                self.cursor.execute(sql_insert_query,insert_tuple)
+                self.conn.commit()
+                self.logger.info("DIM UPDATED WITH NEW CURRENCY : -> " + str(currency_name).upper() )
+                self.cursor.execute(sql_check, (currency_name.lower(),))
+                record = self.cursor.fetchone()
+                currency_key = record[0]
+            else:
+                currency_key = record[0]
+        except mysql.connector.Error as error:
+            self.logger.error("CURRENCY Check and Update {} " .format(error))
+        return currency_key
+
+    def _getCountryKey(self, country_code):
+        country_key = None
+        try:
+            sql_check = """ SELECT * FROM dim_country WHERE lower(country_code) = %s """
+            self.cursor.execute(sql_check, (country_code.lower(),))
+            record = self.cursor.fetchone()
+            # Insert New Record and Return the RecordKey
+            if(record == None):
+                self.logger.info("NOT MATCHING COUNTRY CODE FOUND FOR GUARANTOR - FIX LATER : -> " + str(country_code).upper() )
+            else:
+                country_key = record[0]
+        except mysql.connector.Error as error:
+            self.logger.error("COUNTRY Check for GUARANTOR update {} " .format(error))
+        return country_key
+    
+    def _checkupdateGuarantorDimension(self, guarantor_name, country_key):
+        guarantor_key = None
+        try:
+            sql_check = """ SELECT * FROM dim_guarantor WHERE lower(guarantor_name) = %s """
+            self.cursor.execute(sql_check, (guarantor_name.lower(),))
+            record = self.cursor.fetchone()
+            # Insert New Record and Return the RecordKey
+            if(record == None):
+                sql_insert_query = """ INSERT INTO dim_guarantor ( guarantor_key, guarantor_name, guarantor_country_key ) VALUES ( %s, %s , %s)"""
+                insert_tuple = ( "",guarantor_name.upper(),country_key )
+                self.cursor.execute(sql_insert_query,insert_tuple)
+                self.conn.commit()
+                self.logger.info("DIM UPDATED WITH NEW GUARANTOR : -> " + str(guarantor_name).upper() )
+                self.cursor.execute(sql_check, (guarantor_name.lower(),))
+                record = self.cursor.fetchone()
+                guarantor_key = record[0]
+            else:
+                guarantor_key = record[0]
+        except mysql.connector.Error as error:
+            self.logger.error("GUARANTOR Check and Update {} " .format(error))
+        return guarantor_key
 

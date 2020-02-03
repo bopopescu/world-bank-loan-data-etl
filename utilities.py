@@ -1,5 +1,6 @@
 import logging
 from dateutil import parser
+import re
 
 class utilities:
 
@@ -38,3 +39,8 @@ class utilities:
     def generateTimeDimensionKey(self,dateValue):
         df = parser.parse(dateValue)
         return str(df)[:10].replace("-","")
+
+    def removeNonAlphanumericExcept(self, str_value):
+        regex = re.compile('[,\!?*]')
+        return regex.sub('',str_value)
+

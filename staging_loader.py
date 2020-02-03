@@ -43,7 +43,7 @@ class StagingLoader:
                             self.logger.warning("Row Missing Some Columns")
         self.db_utils.release_db_resources()
 
-
+    """ Revised solution , Generate DIM Entries for Region and Country before Populating the Fact Table"""
     def process_staging_data(self,etl = 0,end_of_period = '2011-04-30'):
             records = self.db_utils.getUnProcessedStagingData(etl,end_of_period)
             for record in records:
@@ -58,11 +58,26 @@ class StagingLoader:
                 if region_key:
                     self.logger.info("FOUND & SET REGION KEY " + str(region_key))
 
-                country = record[5].decode("utf-8")
-                country_code = record[6].decode("utf-8")
+                #COUNTRY SETTING
+                country_code = record[5].decode("utf-8")
+                country_name = record[6].decode("utf-8")
+                country_key = self.db_utils._checkupdateCountryDimension(country_code,country_name, region_key)
+                if country_key:
+                    self.logger.info("FOUND & SET COUNTRY KEY " + str(country_key))
+                
+                #BORROWER SETTING
                 borrower = record[7].decode("utf-8")
+                borrower_key = self.db_utils._checkupdateBorrowerDimension(borrower)
+                if region_key:
+                    self.logger.info("FOUND & SET BORROWER KEY " + str(borrower_key))
+                
+                #GUARANTOR
                 guarantor_country_code = record[8].decode("utf-8")
+                guarantor_country_code_key = self.db_utils._getCountryKey(guarantor_country_code)
                 guarantor = record[9].decode("utf-8")
+                guarantor_key = self.db_utils._checkupdateGuarantorDimension(guarantor, guarantor_country_code_key)
+                if guarantor_key:
+                    self.logger.info("FOUND & SET GUARANTOR KEY " + str(guarantor_key))
                 
                 #LOAN TYPE
                 loan_type = record[10].decode("utf-8")
@@ -78,8 +93,14 @@ class StagingLoader:
 
                 interest_rate = record[12].decode("utf-8")
                 currency_of_commitment = record[13].decode("utf-8")
+
+                #PROJECT
                 project_id = record[14].decode("utf-8")
                 project_name = record[15].decode("utf-8")
+                project_key = self.db_utils._checkupdateProjectDimension(project_id,project_name)
+                if project_key:
+                    self.logger.info("FOUND & SET PROJECT KEY " + str(project_key))
+
                 original_pricincipal_amount = record[16].decode("utf-8")
                 cancelled_amount = record[17].decode("utf-8")
                 undisbursed_amount = record[18].decode("utf-8")
@@ -137,8 +158,8 @@ class StagingLoader:
 
                 etl = record[35]
 
-                # print("load_date ", load_date,)
-                # print("loan_number ", loan_number,)
+                # print("COUNTRY CODE ", country_code,)
+                # print("COUNTRY ", country,)
                 # print("region ", region,)
                 # print("interest_rate ", interest_rate,) 
                 # print("agreement_signing_date ", agreement_signing_date,) 
