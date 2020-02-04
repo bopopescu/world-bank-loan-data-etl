@@ -1,5 +1,6 @@
 import logging
-import mysql.connector 
+import mysql.connector
+import MySQLdb
 from mysql.connector import Error
 from utilities import utilities
 
@@ -12,16 +13,15 @@ class DBUtilities(object):
 
     def __init__(self):
         try:
-            self.conn = mysql.connector.connect(host = 'localhost', database="wb", user="root", password = "")
+            self.conn = mysql.connector.connect(host = 'localhost', database="wb", user="root", password = "" , charset='utf8' )
             self.cursor = self.conn.cursor(prepared=True)
             if self.conn:
                 #print("Connection to DB Successul")
-                self.logger.info('Connection to DB Successul')
+                self.logger.info('DB CONNECTION SUCCESSFULL !')
             else:
                 print("No Connect")
         except mysql.connector.Error as error:
             self.logger.error("Error : {} " .format(error))
-
     
     def insert_staging_data(self,insert_tuple,tuples_placeholder):
         columns = self.staging_columns()
@@ -30,7 +30,19 @@ class DBUtilities(object):
         try:
             self.cursor.execute(sql,insert_tuple)
             self.conn.commit()
-            self.logger.info("Commit Successful")
+            self.logger.info("STAGING COMMIT SUCCESSFUL !!")
+        except mysql.connector.Error as error:
+            print("Error {}" .format(error))
+
+    def insert_fct_data(self,insert_tuple,tuples_placeholder):
+        row_count = None
+        columns = self.fct_columns()
+        sql = """ INSERT INTO fct_loans (""" + str(columns) + """) VALUES """ + tuples_placeholder
+        #print(sql)
+        try:
+            self.cursor.execute(sql,insert_tuple)
+            self.conn.commit()
+            self.logger.info("FACT INSERT - ROWS AFFECTED = {}" .format(self.cursor.rowcount))
         except mysql.connector.Error as error:
             print("Error {}" .format(error))
 
@@ -38,26 +50,26 @@ class DBUtilities(object):
         if(self.conn.is_connected()):
             self.cursor.close()
             self.conn.close()
-            self.logger.info("DB Resources Released")
+            self.logger.info("DB RESOURCES RELEASED !")
 
     def staging_columns(self):
         return """END_OF_PERIOD,LOAN_NUMBER,REGION,COUNTRY,COUNTRY_CODE,BORROWER,GUARANTOR_COUNTRY_CODE,GUARANTOR,LOAN_TYPE,
-                LOAN_STATUS,INTEREST_RATE,CURRENCY_OF_COMMITMENT,PROJECT_ID,PROJECT_NAME,ORIGINAL_PRICINCIPAL_AMOUNT,
-                CANCELLED_AMOUNT,UNDISBURSED_AMOUNT,DISBURSED_AMOUNT,REPAID_TO_IBRD,DUE_TO_IBRD,EXCHANGE_ADJUSTMENT,
-                BORROWERS_OBLIGATION,SOLD_THIRD_PARTY,REPAID_THIRD_PARTY,DUE_THIRD_PARTY,LOANS_HELD,FIRST_REPAYMENT_DATE,
-                LAST_REPAYMENT_DATE,AGREEMENT_SIGNING_DATE,BOARD_APPROVAL_DATE,EFFECTIVE_DATE,CLOSED_DATE,LAST_DISBURSEMENT_DATE"""
+                    LOAN_STATUS,INTEREST_RATE,CURRENCY_OF_COMMITMENT,PROJECT_ID,PROJECT_NAME,ORIGINAL_PRICINCIPAL_AMOUNT,
+                    CANCELLED_AMOUNT,UNDISBURSED_AMOUNT,DISBURSED_AMOUNT,REPAID_TO_IBRD,DUE_TO_IBRD,EXCHANGE_ADJUSTMENT,
+                    BORROWERS_OBLIGATION,SOLD_THIRD_PARTY,REPAID_THIRD_PARTY,DUE_THIRD_PARTY,LOANS_HELD,FIRST_REPAYMENT_DATE,
+                    LAST_REPAYMENT_DATE,AGREEMENT_SIGNING_DATE,BOARD_APPROVAL_DATE,EFFECTIVE_DATE,CLOSED_DATE,LAST_DISBURSEMENT_DATE"""
+
+    def fct_columns(self):
+        return """END_OF_PERIOD_KEY,LOAN_CREDIT_NUMBER,LOAN_STATUS_KEY,LOAN_TYPE_KEY,PROJECT_KEY,BORROWER_KEY,COUNTRY_KEY,CURRENCY_KEY,
+                    GUARANTOR_KEY,INTEREST_RATE,ORIGINAL_PRICINCIPAL_AMOUNT, CANCELLED_AMOUNT, UNDISBURSED_AMOUNT, DISBURSED_AMOUNT,REPAID_TO_IBRD,
+                    DUE_TO_IBRD,EXCHANGE_ADJUSTMENT,BORROWERS_OBLIGATION,SOLD_THIRD_PARTY,REPAID_THIRD_PARTY,DUE_THIRD_PARTY,LOANS_HELD,FIRST_REPAYMENT_DATE,
+                    LAST_REPAYMENT_DATE,AGREEMENT_SIGNING_DATE,BOARD_APPROVAL_DATE,EFFECTIVE_DATE,CLOSED_DATE,LAST_DISBURSEMENT_DATE"""
     
     def getUnProcessedStagingData(self,etl,end_of_period):
         sql = """ SELECT * FROM stg_loans WHERE etl = %s AND end_of_period = %s """
         self.cursor.execute(sql, (etl,end_of_period,))
         return self.cursor.fetchall()
         
-    def _checkupdateLoanStatusDimension(self,status_value):
-        sql = """ SELECT * FROM dim_loan_status WHERE lower(loan_status) = %s """
-        self.cursor.execute(sql, (status_value.lower(),))
-        record = self.cursor.fetchall()
-        print(record)
-
     def _checkUpdateRegionDimension(self,region_name):
         region_key = None
         try:
@@ -66,7 +78,7 @@ class DBUtilities(object):
             self.cursor.execute(sql_check, (region_name.lower(),))
             record = self.cursor.fetchone()
             # Insert New Record and Return the RecordKey
-            if(record == None):
+            if(record == None and len(region_name) > 0):
                 sql_insert_query = """ INSERT INTO dim_region ( region_key, region_name ) VALUES ( %s, %s )"""
                 insert_tuple = ( "",region_name.upper() )
                 self.cursor.execute(sql_insert_query,insert_tuple)
@@ -88,7 +100,7 @@ class DBUtilities(object):
             self.cursor.execute(sql_check, (loan_status_name.lower(),))
             record = self.cursor.fetchone()
             # Insert New Record and Return the RecordKey
-            if(record == None):
+            if(record == None and len(loan_status_name) > 0):
                 sql_insert_query = """ INSERT INTO dim_loan_status ( loan_status_key, loan_status ) VALUES ( %s, %s )"""
                 insert_tuple = ( "",loan_status_name.upper() )
                 self.cursor.execute(sql_insert_query,insert_tuple)
@@ -110,7 +122,7 @@ class DBUtilities(object):
             self.cursor.execute(sql_check, (loan_type_name.lower(),))
             record = self.cursor.fetchone()
             # Insert New Record and Return the RecordKey
-            if(record == None):
+            if(record == None and len(loan_type_name) > 0):
                 sql_insert_query = """ INSERT INTO dim_loan_type ( loan_type_key, loan_type_name ) VALUES ( %s, %s )"""
                 insert_tuple = ( "",loan_type_name.upper() )
                 self.cursor.execute(sql_insert_query,insert_tuple)
@@ -132,7 +144,7 @@ class DBUtilities(object):
             self.cursor.execute(sql_check, (country_code.lower(),))
             record = self.cursor.fetchone()
             # Insert New Record and Return the RecordKey
-            if(record == None):
+            if(record == None and len(country_code) > 0):
                 sql_insert_query = """ INSERT INTO dim_country ( country_key, country_code , country_name , region_key ) VALUES ( %s, %s , %s , %s )"""
                 insert_tuple = ( "",country_code.upper(), country_name.upper(), region_key)
                 self.cursor.execute(sql_insert_query,insert_tuple)
@@ -154,7 +166,7 @@ class DBUtilities(object):
             self.cursor.execute(sql_check, (project_id.lower(),))
             record = self.cursor.fetchone()
             # Insert New Record and Return the RecordKey
-            if(record == None):
+            if(record == None and len(project_id) > 0):
                 sql_insert_query = """ INSERT INTO dim_project ( project_key, project_id , project_name ) VALUES ( %s, %s , %s )"""
                 insert_tuple = ( "",project_id.upper(), project_name.upper() )
                 self.cursor.execute(sql_insert_query,insert_tuple)
@@ -176,7 +188,7 @@ class DBUtilities(object):
             self.cursor.execute(sql_check, (borrower_name.lower(),))
             record = self.cursor.fetchone()
             # Insert New Record and Return the RecordKey
-            if(record == None):
+            if(record == None and len(borrower_name) > 0):
                 sql_insert_query = """ INSERT INTO dim_borrower ( borrower_key, borrower_name ) VALUES ( %s, %s )"""
                 insert_tuple = ( "",borrower_name.upper() )
                 self.cursor.execute(sql_insert_query,insert_tuple)
@@ -198,7 +210,7 @@ class DBUtilities(object):
             self.cursor.execute(sql_check, (currency_name.lower(),))
             record = self.cursor.fetchone()
             # Insert New Record and Return the RecordKey
-            if(record == None):
+            if( len(currency_name) > 0 and record is None):
                 sql_insert_query = """ INSERT INTO dim_currency ( currency_key, currency_name ) VALUES ( %s, %s )"""
                 insert_tuple = ( "",currency_name.upper() )
                 self.cursor.execute(sql_insert_query,insert_tuple)
@@ -207,7 +219,7 @@ class DBUtilities(object):
                 self.cursor.execute(sql_check, (currency_name.lower(),))
                 record = self.cursor.fetchone()
                 currency_key = record[0]
-            else:
+            elif record:
                 currency_key = record[0]
         except mysql.connector.Error as error:
             self.logger.error("CURRENCY Check and Update {} " .format(error))
@@ -235,7 +247,7 @@ class DBUtilities(object):
             self.cursor.execute(sql_check, (guarantor_name.lower(),))
             record = self.cursor.fetchone()
             # Insert New Record and Return the RecordKey
-            if(record == None):
+            if(record == None and len(guarantor_name) > 0):
                 sql_insert_query = """ INSERT INTO dim_guarantor ( guarantor_key, guarantor_name, guarantor_country_key ) VALUES ( %s, %s , %s)"""
                 insert_tuple = ( "",guarantor_name.upper(),country_key )
                 self.cursor.execute(sql_insert_query,insert_tuple)
@@ -248,5 +260,62 @@ class DBUtilities(object):
                 guarantor_key = record[0]
         except mysql.connector.Error as error:
             self.logger.error("GUARANTOR Check and Update {} " .format(error))
+
         return guarantor_key
+
+    def _checkupdateTimeDimension(self, end_of_period):
+        end_of_period_key = None
+        try:
+            ## Bug with mysql.connector, returns a "IndexError: bytearray index out of range" when ID is in where clause,
+            ## Will create a temp function to create new connection and return a record object
+            #sql_check = """ SELECT * FROM dim_time WHERE time_key = %s """
+            #self.cursor.execute(sql_check, (end_of_period_value,))
+            #record = self.cursor.fetchone()
+            end_of_period_key = self.utils.generateTimeDimensionKey(end_of_period)
+            record = self._getTimeKey(end_of_period_key)
+            # Insert New Record and Return the RecordKey
+            if(record == None and end_of_period is not None):
+                sql_insert_query = """ INSERT INTO dim_time ( time_key, year_number, quarter_number ,
+                                        month_number, month_name, day_of_month, week_number, day_of_week, calender_date ) 
+                                        VALUES ( %s, %s , %s , %s , %s , %s , %s , %s , %s) """
+                timeDimAttrs = self.utils.genTimeDimensionAttributes(end_of_period)
+                insert_tuple = ( end_of_period_key,
+                                    timeDimAttrs['YEAR_NUMBER'],
+                                    timeDimAttrs['QUARTER_NUMBER'],
+                                    timeDimAttrs['MONTH_NUMBER'],
+                                    timeDimAttrs['MONTH_NAME'],
+                                    timeDimAttrs['DAY_OF_MONTH'],
+                                    timeDimAttrs['WEEK_NUMBER'],
+                                    timeDimAttrs['DAY_OF_WEEK'],
+                                    timeDimAttrs['CALENDER_DATE'])
+                self.cursor.execute(sql_insert_query,insert_tuple)
+                self.conn.commit()
+                self.logger.info("DIM UPDATED WITH NEW TIME ATTR : -> " + str(end_of_period_key) )
+                self.cursor.execute(sql_check, (end_of_period_key,))
+                record = self.cursor.fetchone()
+                end_of_period_key = record[0]
+            else:
+                end_of_period_key = record[0]
+        except mysql.connector.Error as error:
+            self.logger.error("TIME ATTR CHECK & UPDATE {} " .format(error))
+            exit()
+        return end_of_period_key
+
+
+    def _getTimeKey(self, end_of_period_key):
+        record = None
+        try:
+            db_conn_tmp = MySQLdb.connect("localhost","root","", "wb")
+            cursor_tmp = db_conn_tmp.cursor()
+            sql_check = """ SELECT * FROM dim_time WHERE time_key = %s """
+            cursor_tmp.execute(sql_check, (end_of_period_key,))
+            record = cursor_tmp.fetchone()
+        except (MySQLdb.Error, MySQLdb.Warning) as error:
+            self.logger.error("FETCHING TIME KEY {} " .format(error))
+        # finally:
+        #     cursor_tmp.close()
+        #     db_conn_tmp.close()
+        return record
+
+
 

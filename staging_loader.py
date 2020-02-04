@@ -8,13 +8,15 @@ from utilities import utilities
 
 class StagingLoader:
 
-    NUMBER_OF_FIELDS = 33
+    NUMBER_OF_FIELDS_STAGING = 33
+    NUMBER_OF_FIELDS_FACT = 29
     NUMBER_OF_ROWS = 0
     dictDate = {}
     utils = utilities()
     db_utils = DBUtilities()
     logger = utils.formatLogger("STAGING_ETL")
-    tuples_placeholder = utils.generatePlaceholderTuple(NUMBER_OF_FIELDS)
+    staging_tuples_placeholder = utils.generatePlaceholderTuple(NUMBER_OF_FIELDS_STAGING)
+    fact_tuples_placeholder = utils.generatePlaceholderTuple(NUMBER_OF_FIELDS_FACT)
 
     # def __init__(self):
     #     # self.conn =  DBConn()
@@ -37,7 +39,7 @@ class StagingLoader:
                                     row[10],row[11],row[12],row[13],row[14],row[15],row[16],row[17],row[18],
                                     row[19],row[20],row[21],row[22],row[23],row[24],row[25],row[26],row[27],
                                     row[28],row[29],row[30],row[31],row[32])
-                            self.db_utils.insert_staging_data(tt,self.tuples_placeholder)
+                            self.db_utils.insert_staging_data(tt,self.staging_tuples_placeholder)
                             exit()
                         else:
                             self.logger.warning("Row Missing Some Columns")
@@ -49,57 +51,58 @@ class StagingLoader:
             for record in records:
                 id = record[0]
                 load_date = record[1]
-                end_of_period = record[2]
+
+
+                end_of_period = record[2] 
+                end_of_period_key = self.db_utils._checkupdateTimeDimension(end_of_period)
+                self.logger.info("END_OF_PERIOD_KEY SET TO -> " + str(end_of_period_key))
+
                 loan_number = record[3].decode("utf-8")
 
                 #REGION SETTING
                 region = record[4].decode("utf-8")
                 region_key = self.db_utils._checkUpdateRegionDimension(region)
-                if region_key:
-                    self.logger.info("FOUND & SET REGION KEY " + str(region_key))
+                self.logger.info("REGION_KEY SET TO -> " + str(region_key))
 
                 #COUNTRY SETTING
                 country_code = record[5].decode("utf-8")
                 country_name = record[6].decode("utf-8")
                 country_key = self.db_utils._checkupdateCountryDimension(country_code,country_name, region_key)
-                if country_key:
-                    self.logger.info("FOUND & SET COUNTRY KEY " + str(country_key))
+                self.logger.info("COUNTRY_KEY SET TO -> " + str(country_key))
                 
                 #BORROWER SETTING
                 borrower = record[7].decode("utf-8")
                 borrower_key = self.db_utils._checkupdateBorrowerDimension(borrower)
-                if region_key:
-                    self.logger.info("FOUND & SET BORROWER KEY " + str(borrower_key))
+                self.logger.info("BORROWER_KEY SET TO -> " + str(borrower_key))
                 
                 #GUARANTOR
                 guarantor_country_code = record[8].decode("utf-8")
                 guarantor_country_code_key = self.db_utils._getCountryKey(guarantor_country_code)
                 guarantor = record[9].decode("utf-8")
                 guarantor_key = self.db_utils._checkupdateGuarantorDimension(guarantor, guarantor_country_code_key)
-                if guarantor_key:
-                    self.logger.info("FOUND & SET GUARANTOR KEY " + str(guarantor_key))
+                self.logger.info("GUARANTOR_KEY SET TO -> " + str(guarantor_key))
                 
                 #LOAN TYPE
                 loan_type = record[10].decode("utf-8")
                 loan_type_key = self.db_utils._checkupdateLoanTypeDimension(loan_type)
-                if loan_type_key:
-                    self.logger.info("FOUND & SET LOAN TYPE KEY " + str(loan_type_key))
+                self.logger.info("LOAN_TYPE SET TO -> " + str(loan_type_key))
 
                 #LOAN STATUS
                 loan_status = record[11].decode("utf-8")
                 loan_status_key = self.db_utils._checkupdateLoanStatusDimension(loan_status)
-                if loan_status_key:
-                    self.logger.info("FOUND & SET LOAN STATUS KEY " + str(loan_status_key))
+                self.logger.info("LOAN_STATUS KEY SET TO -> " + str(loan_status_key))
 
                 interest_rate = record[12].decode("utf-8")
+                
                 currency_of_commitment = record[13].decode("utf-8")
+                currency_commitment_key = self.db_utils._checkupdateCurrencyDimension(currency_of_commitment)
+                self.logger.info("CURRENCY KEY SET TO -> " + str(currency_commitment_key))
 
                 #PROJECT
                 project_id = record[14].decode("utf-8")
                 project_name = record[15].decode("utf-8")
                 project_key = self.db_utils._checkupdateProjectDimension(project_id,project_name)
-                if project_key:
-                    self.logger.info("FOUND & SET PROJECT KEY " + str(project_key))
+                self.logger.info("PROJECT KEY SET TO -> " + str(project_key))
 
                 original_pricincipal_amount = record[16].decode("utf-8")
                 cancelled_amount = record[17].decode("utf-8")
@@ -118,45 +121,55 @@ class StagingLoader:
                 first_repayment_date = record[28]
                 first_repayment_date_key = None
                 if first_repayment_date:
-                    first_repayment_date_key = self.utils.generateTimeDimensionKey(str(first_repayment_date))
+                    first_repayment_date_key = self.utils.generateTimeDimensionKey(first_repayment_date)
 
                 #LAST_REPAYMENT
                 last_repayment_date = record[29]
                 last_repayment_date_key = None
                 if last_repayment_date:
-                    last_repayment_date_key = self.utils.generateTimeDimensionKey(str(last_repayment_date))
+                    last_repayment_date_key = self.utils.generateTimeDimensionKey(last_repayment_date)
 
                 #AGREEMENT SIGNING
                 agreement_signing_date = record[30]
                 agreement_signing_date_key = None
                 if agreement_signing_date:
-                    agreement_signing_date_key = self.utils.generateTimeDimensionKey(str(agreement_signing_date))
+                    agreement_signing_date_key = self.utils.generateTimeDimensionKey(agreement_signing_date)
 
                 #BOARD APPROVAL
                 board_approval_date = record[31]
                 board_approval_date_key = None
                 if board_approval_date:
-                    board_approval_date_key = self.utils.generateTimeDimensionKey(str(board_approval_date))
+                    board_approval_date_key = self.utils.generateTimeDimensionKey(board_approval_date)
 
                 #EFFECTIVE DATE
                 effective_date = record[32]
                 effective_date_key = None
                 if effective_date:
-                    effective_date_key = self.utils.generateTimeDimensionKey(str(effective_date))
+                    effective_date_key = self.utils.generateTimeDimensionKey(effective_date)
 
                 #CLOSE DATE
                 closed_date = record[33]
-                effective_date_key = None
+                closed_date_key = None
                 if closed_date:
-                    effective_date_key = self.utils.generateTimeDimensionKey(str(closed_date))
+                    closed_date_key = self.utils.generateTimeDimensionKey(closed_date)
 
                 #LAST DISBURSEMENT
                 last_disbursement_date = record[34]
                 last_disbursement_date_key = None
                 if last_disbursement_date:
-                    last_disbursement_date_key = self.utils.generateTimeDimensionKey(str(last_disbursement_date))
+                    last_disbursement_date_key = self.utils.generateTimeDimensionKey(last_disbursement_date)
 
                 etl = record[35]
+
+                fct_tuple = (end_of_period_key, loan_number, loan_status_key, loan_type_key, project_key, borrower_key,
+                                country_key, currency_commitment_key, guarantor_key, interest_rate, original_pricincipal_amount,
+                                cancelled_amount, undisbursed_amount, disbursed_amount, repaid_to_ibrd, due_to_ibrd, exchange_adjustment,
+                                borrowers_obligation, sold_third_party, repaid_third_party, due_third_party,loans_held,
+                                first_repayment_date_key, last_repayment_date_key ,agreement_signing_date_key, board_approval_date_key, 
+                                effective_date_key, closed_date_key, last_disbursement_date_key)
+
+                self.db_utils.insert_fct_data(fct_tuple, self.fact_tuples_placeholder)
+
 
                 # print("COUNTRY CODE ", country_code,)
                 # print("COUNTRY ", country,)
