@@ -43,8 +43,10 @@ class DBUtilities(object):
             self.cursor.execute(sql,insert_tuple)
             self.conn.commit()
             self.logger.info("FACT INSERT - ROWS AFFECTED = {}" .format(self.cursor.rowcount))
+            row_count = self.cursor.rowcount
         except mysql.connector.Error as error:
             print("Error {}" .format(error))
+        return row_count
 
     def release_db_resources(self):
         if(self.conn.is_connected()):
@@ -312,10 +314,22 @@ class DBUtilities(object):
             record = cursor_tmp.fetchone()
         except (MySQLdb.Error, MySQLdb.Warning) as error:
             self.logger.error("FETCHING TIME KEY {} " .format(error))
-        # finally:
-        #     cursor_tmp.close()
-        #     db_conn_tmp.close()
+        finally:
+            cursor_tmp.close()
+            db_conn_tmp.close()
         return record
+
+    def _setETLFlag(self,id):
+        row_count = None
+        try:
+            sql_update = """ UPDATE stg_loans SET ETL = 1 WHERE id = %s """
+            insert_tuple = (str(id))
+            self.cursor.execute(sql_update,insert_tuple)
+            self.conn.commit()
+            row_count = self.cursor.rowcount
+        except mysql.connector.Error as error:
+            self.logger.error("ETL FLAG UPDATE {} " .format(error))
+        return row_count
 
 
 

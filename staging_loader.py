@@ -47,11 +47,16 @@ class StagingLoader:
 
     """ Revised solution , Generate DIM Entries for Region and Country before Populating the Fact Table"""
     def process_staging_data(self,etl = 0,end_of_period = '2011-04-30'):
+            
             records = self.db_utils.getUnProcessedStagingData(etl,end_of_period)
+            
+            if len(records) == 0:
+                self.logger.info("NOT DATA TO PROCESS")
+                exit()
+
             for record in records:
                 id = record[0]
                 load_date = record[1]
-
 
                 end_of_period = record[2] 
                 end_of_period_key = self.db_utils._checkupdateTimeDimension(end_of_period)
@@ -168,7 +173,13 @@ class StagingLoader:
                                 first_repayment_date_key, last_repayment_date_key ,agreement_signing_date_key, board_approval_date_key, 
                                 effective_date_key, closed_date_key, last_disbursement_date_key)
 
-                self.db_utils.insert_fct_data(fct_tuple, self.fact_tuples_placeholder)
+                affected_rows = self.db_utils.insert_fct_data(fct_tuple, self.fact_tuples_placeholder)
+
+                if affected_rows > 0:
+                    ## set staging table's ETL flag to 1 , to signify that row processing is complete
+                    records_count = self.db_utils._setETLFlag(id)
+                    if records_count > 0:
+                        self.logger.info("==================================================================")
 
 
                 # print("COUNTRY CODE ", country_code,)

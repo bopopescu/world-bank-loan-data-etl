@@ -49,3 +49,7 @@ class Tests(unittest.TestCase):
         record = self.db_utils._getTimeKey(value)
         self.assertEqual(record[0],self.EXPECTED_TIME_KEY)
 
+    def test_setETLFlag(self,id = 1):
+        row_count = self.db_utils._setETLFlag(id)
+        self.assertEqual(row_count,1)
+
