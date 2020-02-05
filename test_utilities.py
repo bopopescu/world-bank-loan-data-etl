@@ -23,6 +23,7 @@ class Tests(unittest.TestCase):
     record = None
     currency_name = 1
     EXPECTED_TIME_KEY = "20110430"
+    EXPECTED_DATE_NO_TIMESTAMP = "2011-04-30"
     
     def test_generateTuple(self):
         tt = self.utils.generateTuple(2)
@@ -52,4 +53,8 @@ class Tests(unittest.TestCase):
     def test_setETLFlag(self,id = 1):
         row_count = self.db_utils._setETLFlag(id)
         self.assertEqual(row_count,1)
+
+    def test_removeTimeStamp(self,dateValue = "2011-04-30 00:00:00"):
+        newDate = self.utils.removeTimeStamp(dateValue)
+        self.assertEqual(newDate,self.EXPECTED_DATE_NO_TIMESTAMP)
 

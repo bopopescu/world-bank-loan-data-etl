@@ -21,8 +21,7 @@ class DataProcessor:
     end_of_period = None
 
     def __init__(self,end_of_period):
-        self.end_of_period = end_of_period
-        print ("end_of_period " + str(self.end_of_period))
+        self.end_of_period = self.utils.removeTimeStamp(end_of_period)
 
     def read_and_load_files(self):
         os.chdir("D:\personal\wb\stagging")

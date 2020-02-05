@@ -45,6 +45,14 @@ class utilities:
             df = parser.parse(str(dateValue))
         return str(df)[:10].replace("-","")
 
+    def removeTimeStamp(self,dateValue):
+        dt = None
+        if isinstance(dateValue, str):
+            dt = parser.parse(dateValue)
+        else:
+            dt = parser.parse(str(dateValue))
+        return str(dt)[:10]
+
     def removeNonAlphanumericExcept(self, str_value):
         regex = re.compile('[,\!?*]')
         return regex.sub('',str_value)
