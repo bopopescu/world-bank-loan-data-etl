@@ -2,6 +2,7 @@ import unittest
 from utilities import utilities
 from db_utilities import DBUtilities
 import datetime
+import os
 
 class Tests(unittest.TestCase):
 
@@ -24,6 +25,9 @@ class Tests(unittest.TestCase):
     currency_name = 1
     EXPECTED_TIME_KEY = "20110430"
     EXPECTED_DATE_NO_TIMESTAMP = "2011-04-30"
+    WORKING_DIRECTORY = "D:\personal\wb\stagging"
+    NEW_WORKING_DIRECTORY = "D:\personal\wb\stagging\processed"
+    PROCESSED_DATA_DIR = "processed"
     
     def test_generateTuple(self):
         tt = self.utils.generateTuple(2)
@@ -58,3 +62,7 @@ class Tests(unittest.TestCase):
         newDate = self.utils.removeTimeStamp(dateValue)
         self.assertEqual(newDate,self.EXPECTED_DATE_NO_TIMESTAMP)
 
+    def test_createDirectory(self):
+        os.chdir(self.WORKING_DIRECTORY)
+        newDir = self.utils.createDirectory(self.WORKING_DIRECTORY,self.PROCESSED_DATA_DIR)
+        self.assertEqual(newDir,self.NEW_WORKING_DIRECTORY)

@@ -3,8 +3,11 @@ from dateutil import parser
 import re
 from datetime import datetime, timedelta
 import math
+import os
 
 class utilities:
+
+    LOGGER = "UTILITIES"
 
     def formatLogger(self,loggerName):
         logger = logging.getLogger(loggerName)
@@ -14,7 +17,7 @@ class utilities:
         formatter = logging.Formatter("%(asctime)s | %(levelname)s | %(message)s ")
         ch.setFormatter(formatter)
         logger.addHandler(ch)
-        return logger
+        return logger    
 
     def generateTuple(self,num):
         t = '('
@@ -79,5 +82,14 @@ class utilities:
             attrs['DAY_OF_WEEK'] = dateValue.strftime('%a')
             attrs['CALENDER_DATE'] = dateValue
         return attrs
+
+    def createDirectory(self,file_path,dirName):
+        self.formatLogger(self.LOGGER).info("CREATING ARCHIVAL DIRECTORY => " + str(file_path) + "\\" + str(dirName))
+        if not os.path.exists(dirName):
+            os.mkdir(dirName)
+        else:    
+            self.formatLogger(self.LOGGER).info("ARCHIVAL DIRECTORY ALREADY EXISTS")
+        os.chdir(dirName)
+        return os.getcwd()
 
 

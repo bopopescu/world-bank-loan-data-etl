@@ -2,6 +2,8 @@ import os
 import sys
 import logging
 import csv
+import parser as p
+import shutil
 from db_utilities import DBUtilities
 from utilities import utilities
 
@@ -19,15 +21,20 @@ class DataProcessor:
     fact_tuples_placeholder = utils.generatePlaceholderTuple(NUMBER_OF_FIELDS_FACT)
 
     end_of_period = None
+    raw_file_path = None
+    processed_file_path = None
 
-    def __init__(self,end_of_period):
+    def __init__(self,end_of_period,raw_file_path,processed_file_path):
         self.end_of_period = self.utils.removeTimeStamp(end_of_period)
+        self.raw_file_path = raw_file_path
+        self.processed_file_path = processed_file_path
 
     def read_and_load_files(self):
-        os.chdir("D:\personal\wb\stagging")
+        os.chdir(file_path)
         files = [f for f in os.listdir('.') if os.path.isfile(f)]
         for f in files:
             if f.endswith(".csv"):
+                # Create Pandas Data Frame, for reporting
                 with open(f) as records:
                     reader = csv.reader(records, delimiter= ',')
                     for row in reader:
@@ -41,9 +48,14 @@ class DataProcessor:
                                     row[19],row[20],row[21],row[22],row[23],row[24],row[25],row[26],row[27],
                                     row[28],row[29],row[30],row[31],row[32])
                             self.db_utils.insert_staging_data(tt,self.staging_tuples_placeholder)
-                            exit()
+                            #exit()
                         else:
                             self.logger.warning("Row Missing Some Columns")
+                    #Backup FileKeep copy in a director
+                    processed_file_path = self.utils.createDirectory(self.raw_file_path,self.processed_file_path)
+                    dest = shutil.copy(self.raw_file_path+f , processed_file_path+f)
+                    if dest == processed_file_path:
+                        self.logger("RAW DATA FILE SUCCESSFULLY ARCHIVED")
         self.db_utils.release_db_resources()
 
     """ Revised solution , Generate DIM Entries for Region and Country before Populating the Fact Table"""
