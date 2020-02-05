@@ -6,7 +6,7 @@ from db_utilities import DBUtilities
 from utilities import utilities
 
 
-class StagingLoader:
+class DataProcessor:
 
     NUMBER_OF_FIELDS_STAGING = 33
     NUMBER_OF_FIELDS_FACT = 29
@@ -18,10 +18,11 @@ class StagingLoader:
     staging_tuples_placeholder = utils.generatePlaceholderTuple(NUMBER_OF_FIELDS_STAGING)
     fact_tuples_placeholder = utils.generatePlaceholderTuple(NUMBER_OF_FIELDS_FACT)
 
-    # def __init__(self):
-    #     # self.conn =  DBConn()
-    #     # self.cursor = self.conn.cursor(prepared = True)
-        
+    end_of_period = None
+
+    def __init__(self,end_of_period):
+        self.end_of_period = end_of_period
+        print ("end_of_period " + str(self.end_of_period))
 
     def read_and_load_files(self):
         os.chdir("D:\personal\wb\stagging")
@@ -31,6 +32,7 @@ class StagingLoader:
                 with open(f) as records:
                     reader = csv.reader(records, delimiter= ',')
                     for row in reader:
+                        # Skip Header Row
                         if row[0] == 'End of Period':
                             continue
                         if len(row) == self.NUMBER_OF_FIELDS:
